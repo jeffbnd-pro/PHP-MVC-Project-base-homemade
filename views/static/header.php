@@ -1,0 +1,4 @@
+<nav>
+    <a href="/">Accueil</a>
+    <a href="/products">Produits</a>
+</nav>
