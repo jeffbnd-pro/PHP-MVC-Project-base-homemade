@@ -28,6 +28,10 @@
                 <td>
                     <a href="/products/show?id=<?= (int) $produit['id'] ?>">Voir</a> |
                     <a href="/products/edit?id=<?= (int) $produit['id'] ?>">Éditer</a>
+                    <form action="/products/delete" method="POST" onsubmit="return confirm('Voulez vous supprimer ce produit ?')">
+                        <input type="hidden" name="id" value="<?= (int)$produit['id'] ?>">
+                        <button type="submit">Supprimer</button>
+                    </form>
                 </td>
             </tr>
         <?php endforeach; ?>

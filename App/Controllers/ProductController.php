@@ -1,19 +1,24 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Core\Response;
-use App\Repository\CategoryRepository;
-use App\Repository\ProductRepository;
 use App\Core\Request;
+use App\Core\Response;
+use App\Repository\ProductRepository;
+use App\Repository\CategoryRepository;
 
-class ProductController extends Controller
+final class ProductController extends Controller
 {
     private ProductRepository $products;
     private CategoryRepository $categories;
 
-    public function __construct(Request $request, ProductRepository $products, CategoryRepository $categories) {
+    public function __construct(
+        Request $request,
+        ProductRepository $products,
+        CategoryRepository $categories
+    ) {
         parent::__construct($request);
         $this->products = $products;
         $this->categories = $categories;
@@ -22,58 +27,105 @@ class ProductController extends Controller
     public function index(): Response
     {
         $products = $this->products->findAll();
-
         return $this->view('products/index', [
-            'title' => 'Bienvenue sur la page produit',
-            'message' => 'Voici toute les informations concernant les produits',
-            'products' => $products
+            'products' => $products,
         ]);
-    }
-
-
-    public function create(): Response
-    {
-        // On récupère les catégories pour les afficher dans le <select> du formulaire
-        $categories = $this->categories->findAll();
-
-        return $this->view('products/create', [
-            'title' => 'Créer un produit',
-            'categories' => $categories
-        ]);
-    }
-    
-    public function store(): Response
-    {
-        $data = [
-            'name' => $_POST['name'] ?? '',
-            'brand' => $_POST['brand'] ?? null,
-            'reference' => $_POST['reference'] ?? null,
-            'quantity' => (int) ($_POST['quantity'] ?? 0),
-            'price' => (float) ($_POST['price'] ?? 0),
-            'availability' => isset($_POST['availability']) ? 1 : 0,
-            'category_id' => (int) ($_POST['category_id'] ?? 0),
-            'users_id' => 1
-        ];
-        if (!empty($data['name']) && $data['category_id'] > 0) {
-            $this->products->create($data);
-            echo "<script>window.location.href='/products';</script>";
-        }
     }
 
     public function show(): Response
     {
-        $products = $this->products->findOneById($_GET['id']);
+        $id = (int) $this->request->query('id');
+        $product = $this->products->findOneById($id);
+
+        if (!$product) {
+            return new Response('Produit introuvable', 404);
+        }
 
         return $this->view('products/show', [
-            'title' => 'Bienvenue sur la page détail produit',
-            'message' => 'Voici toute les informations concernant ce produit',
-            'products' => $products
+            'product' => $product
         ]);
+    }
+
+    public function create(): Response
+    {
+        return $this->view('products/create', [
+            'categories' => $this->categories->findAll()
+        ]);
+    }
+
+    public function store(): Response
+    {
+        $data = [
+            'name' => trim((string) $this->request->input('name')),
+            'brand' => trim((string) $this->request->input('brand')),
+            'reference' => trim((string) $this->request->input('reference')),
+            'quantity' => (int) $this->request->input('quantity'),
+            'price' => (float) $this->request->input('price'),
+            'availability' => (int) $this->request->input('availability'),
+            'category_id' => (int) $this->request->input('category_id'),
+            'users_id' => 1, // provisoire
+        ];
+
+        if ($data['name'] === '') {
+            return $this->view('products/create', [
+                'error' => 'Le nom est obligatoire',
+                'product' => $data,
+                'categories' => $this->categories->findAll()
+            ], 422);
+        }
+
+        $this->products->create($data);
+
+        return Response::redirect('/products');
     }
 
     public function edit(): Response
     {
+        $id = (int) $this->request->query('id');
+        $id2 = $_GET['id'];
 
+        var_dump($id, $id2);
+        $product = $this->products->findOneById($id);
+
+        if (!$product) {
+            return new Response('Produit introuvable', 404);
+        }
+
+        return $this->view('products/edit', [
+            'product' => $product,
+            'categories' => $this->categories->findAll()
+        ]);
+    }
+
+    public function update(): Response
+    {
+        $id = (int) $this->request->input('id');
+
+        if ($id <= 0) {
+            return new Response("ID invalide", 400);
+        }
+
+        $data = [
+            'name' => trim((string) ($this->request->input('name') ?? '')),
+            'brand' => $this->request->input('brand'),
+            'reference' => $this->request->input('reference'),
+            'quantity' => (int) $this->request->input('quantity'),
+            'price' => (float) $this->request->input('price'),
+            'availability' => $this->request->input('availability') ? 1 : 0,
+            'category_id' => (int) $this->request->input('category_id'),
+        ];
+
+        $this->products->update($id, $data);
+
+        return Response::redirect("/products");
+    }
+
+    public function delete(): Response
+    {
+        $id = (int) $this->request->input('id');
+        $this->products->delete($id);
+
+        return Response::redirect("/products");
     }
 
 
