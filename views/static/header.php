@@ -1,5 +1,5 @@
 <nav>
     <a href="/">Accueil</a>
     <a href="/products">Produits</a>
-    <a href="/category">Catégorie</a>
+    <a href="/categories">Catégorie</a>
 </nav>
