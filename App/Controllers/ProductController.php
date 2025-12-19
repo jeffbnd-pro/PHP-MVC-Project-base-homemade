@@ -33,19 +33,48 @@ class ProductController extends Controller
 
     public function create(): Response
     {
-        return $this->view('products/create');
+        // On récupère les catégories pour les afficher dans le <select> du formulaire
+        $categories = $this->categories->findAll();
+
+        return $this->view('products/create', [
+            'title' => 'Créer un produit',
+            'categories' => $categories
+        ]);
     }
     
     public function store(): Response
     {
-        $data = [':name, :brand, :reference, :quantity, :price, :availability, :category_id, :users_id'];
-        $products = $this->products->create($data);
+        $data = [
+            'name' => $_POST['name'] ?? '',
+            'brand' => $_POST['brand'] ?? null,
+            'reference' => $_POST['reference'] ?? null,
+            'quantity' => (int) ($_POST['quantity'] ?? 0),
+            'price' => (float) ($_POST['price'] ?? 0),
+            'availability' => isset($_POST['availability']) ? 1 : 0,
+            'category_id' => (int) ($_POST['category_id'] ?? 0),
+            'users_id' => 1
+        ];
+        if (!empty($data['name']) && $data['category_id'] > 0) {
+            $this->products->create($data);
+            echo "<script>window.location.href='/products';</script>";
+        }
+    }
 
-        return $this->view('products/create', [
-            'title' => 'Créer un produit',
-            'message' => 'Entrez les information du produit',
+    public function show(): Response
+    {
+        $products = $this->products->findOneById($_GET['id']);
+
+        return $this->view('products/show', [
+            'title' => 'Bienvenue sur la page détail produit',
+            'message' => 'Voici toute les informations concernant ce produit',
             'products' => $products
-
         ]);
     }
+
+    public function edit(): Response
+    {
+
+    }
+
+
 }
